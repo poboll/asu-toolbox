@@ -11,7 +11,7 @@
 
 *纯本地运行 · 无远程依赖 · 不收集任何数据*
 
-[立即下载](../../releases/latest) · [安装教程](#-安装) · [功能总览](#-功能总览) · [配置指南](#-配置指南) · [常见问题](#-常见问题) · [在线主页](https://xiaoshenming.github.io/jzx-lite/)
+[立即下载](../../releases/latest) · [安装教程](#-安装) · [功能总览](#-功能总览) · [配置指南](#-配置指南) · [常见问题](#-常见问题) · [在线主页](https://poboll.github.io/jzx-lite/)
 
 </div>
 
@@ -63,7 +63,7 @@
 ### 方式二：克隆本仓库
 
 ```bash
-git clone https://github.com/xiaoshenming/jzx-lite.git
+git clone https://github.com/poboll/jzx-lite.git
 ```
 
 然后在扩展管理页「加载已解压的扩展程序」选择仓库目录即可。

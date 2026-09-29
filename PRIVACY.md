@@ -24,4 +24,4 @@ JZX Lite 百宝箱（下称"本扩展"）尊重并保护用户隐私。本政策
 
 ## 联系
 
-如有疑问请提 [Issue](https://github.com/xiaoshenming/jzx-lite/issues)。
+如有疑问请提 [Issue](https://github.com/poboll/jzx-lite/issues)。
