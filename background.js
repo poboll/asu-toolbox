@@ -1,74 +1,88 @@
-/* JZX Lite 百宝箱 — MV3 service worker
- * 右键菜单 + 动作分发 + Aria2/Motrix RPC + 代理管理 + offscreen 二维码识别
+/**
+ * 阿苏工具箱 — Manifest V3 Service Worker（v2.0.0 重构版）
+ *
+ * 模块划分：
+ *   CONFIG      默认配置与存储读取
+ *   MENUS       右键菜单定义与构建
+ *   NOTIFY      通知
+ *   RPC         Aria2 / Motrix JSON-RPC
+ *   QR          二维码识别（offscreen 文档 + jsQR）
+ *   HANDLERS    菜单点击分发
+ *   PROXY       代理管理（固定 / PAC 订阅 / 域名分流）
+ *   MESSAGING   与 popup / options / offscreen 的消息总线
  */
+'use strict';
 
-const MENUS = [
-  { id: 'qr-selection',   contexts: ['selection'],                type: 'qr',       title: '生成选区二维码' },
-  { id: 'qr-link-page',   contexts: ['link', 'page', 'audio', 'video'], type: 'qr',  title: '生成链接/页面二维码' },
-  { id: 'qr-scan',        contexts: ['image'],                    type: 'qr_scan',  title: '识别图片二维码' },
-  { id: 'qr-jump',        contexts: ['image'],                    type: 'qr_jump',  title: '识别二维码并跳转' },
-  { id: 'img-baidu',      contexts: ['image'],                    type: 'baidu_image', title: '百度识图（相似图片）' },
-  { id: 'img-google',     contexts: ['image'],                    type: 'google_image', title: '谷歌识图（Lens）' },
-  { id: 'pan-search',     contexts: ['selection'],                type: 'pan',      title: '网盘聚合搜索' },
-  { id: 'download',       contexts: ['link', 'audio', 'video'],   type: 'download', title: '使用浏览器下载' },
-  { id: 'aria-down',      contexts: ['link', 'audio', 'video'],   type: 'aria',     title: '推送到 Aria2 下载' },
-  { id: 'motrix-down',    contexts: ['link', 'audio', 'video'],   type: 'motrix',   title: '推送到 Motrix 下载' },
-  { id: 'show-password',  contexts: ['page'],                     type: 'password', title: '显示/隐藏明文密码' },
-  { id: 'cookie-tool',    contexts: ['page'],                     type: 'cookie',   title: 'Cookie 工具（本站）' },
-  { id: 'open-options',   contexts: ['page'],                     type: 'options',  title: 'JZX Lite 设置' },
+/* ============================== CONFIG ============================== */
+
+const BRAND = '阿苏工具箱';
+
+const MENU_DEFS = [
+  { id: 'qr-selection',  contexts: ['selection'],                    type: 'qr',       title: '生成选区二维码' },
+  { id: 'qr-link-page',  contexts: ['link', 'page', 'audio', 'video'], type: 'qr',     title: '生成链接/页面二维码' },
+  { id: 'qr-scan',       contexts: ['image'],                        type: 'qr_scan',  title: '识别图片二维码' },
+  { id: 'qr-jump',       contexts: ['image'],                        type: 'qr_jump',  title: '识别二维码并跳转' },
+  { id: 'img-baidu',     contexts: ['image'],                        type: 'baidu_image', title: '百度识图（相似图片）' },
+  { id: 'img-google',    contexts: ['image'],                        type: 'google_image', title: '谷歌识图（Lens）' },
+  { id: 'pan-search',    contexts: ['selection'],                    type: 'pan',      title: '网盘聚合搜索' },
+  { id: 'download',      contexts: ['link', 'audio', 'video'],       type: 'download', title: '使用浏览器下载' },
+  { id: 'aria-down',     contexts: ['link', 'audio', 'video'],       type: 'aria',     title: '推送到 Aria2 下载' },
+  { id: 'motrix-down',   contexts: ['link', 'audio', 'video'],       type: 'motrix',   title: '推送到 Motrix 下载' },
+  { id: 'show-password', contexts: ['page'],                         type: 'password', title: '显示/隐藏明文密码' },
+  { id: 'cookie-tool',   contexts: ['page'],                         type: 'cookie',   title: 'Cookie 工具（本站）' },
+  { id: 'open-options',  contexts: ['page'],                         type: 'options',  title: '阿苏工具箱设置' },
 ];
 
-const DEFAULTS = {
-  menus: Object.fromEntries(MENUS.map(m => [m.id, { on: true, title: m.title }])),
-  aria: { server: 'http://localhost:6800/jsonrpc', token: '' },
+const DEFAULT_CONFIG = {
+  menus: Object.fromEntries(MENU_DEFS.map(m => [m.id, { on: true, title: m.title }])),
+  aria:   { server: 'http://localhost:6800/jsonrpc',  token: '' },
   motrix: { server: 'http://localhost:16800/jsonrpc', token: '' },
-  pan: { template: 'https://www.dalipan.com/search?key={q}' },
+  pan:    { template: 'https://www.dalipan.com/search?key={q}' },
   proxy: {
     mode: 'off', // off | fixed | pac_url | rules
     fixed: { scheme: 'http', host: '127.0.0.1', port: 7890 },
     pacUrl: '',
-    rules: [], // [{domain, host, port, scheme}]
-    bypassList: ['localhost', '127.0.0.1', '<local>']
+    rules: [],
+    bypassList: ['localhost', '127.0.0.1', '<local>'],
   },
-  scripts: [] // [{id, name, code, on}]
+  scripts: [], // [{ id, name, code, on }]
 };
 
-async function cfg() {
-  const got = await chrome.storage.sync.get(null);
-  const out = structuredClone(DEFAULTS);
-  for (const k of Object.keys(out)) if (got[k] !== undefined) out[k] = got[k];
-  // 深合并一层，避免旧配置缺字段
-  for (const k of ['aria', 'motrix', 'pan', 'proxy']) Object.assign(out[k], got[k] || {});
-  return out;
-}
-
-/* ---------------- 右键菜单 ---------------- */
-
-let rebuildChain = Promise.resolve();
-function rebuildMenus() {
-  rebuildChain = rebuildChain.then(doRebuild).catch(() => {});
-  return rebuildChain;
-}
-
-async function doRebuild() {
-  await chrome.contextMenus.removeAll();
-  const c = await cfg();
-  for (const m of MENUS) {
-    const st = c.menus[m.id] || { on: true, title: m.title };
-    if (!st.on) continue;
-    await createMenu({
-      id: m.id,
-      contexts: m.contexts,
-      title: st.title || m.title
-    });
+/** 读取合并后的配置（浅合并一层，兼容旧配置缺字段）。 */
+async function loadConfig() {
+  const stored = await chrome.storage.sync.get(null);
+  const cfg = structuredClone(DEFAULT_CONFIG);
+  for (const key of Object.keys(cfg)) {
+    if (stored[key] !== undefined) {
+      cfg[key] = (key === 'menus' || typeof cfg[key] !== 'object')
+        ? stored[key]
+        : Object.assign(cfg[key], stored[key]);
+    }
   }
-  for (const s of (c.scripts || [])) {
-    if (!s.on || !s.name) continue;
-    await createMenu({
-      id: 'script-' + s.id,
-      contexts: ['page', 'frame'],
-      title: '▶ ' + s.name
-    });
+  return cfg;
+}
+
+/* ============================== MENUS =============================== */
+
+let menuRebuildChain = Promise.resolve();
+
+/** 串行化重建，避免并发触发导致菜单 ID 冲突。 */
+function scheduleRebuildMenus() {
+  menuRebuildChain = menuRebuildChain.then(rebuildMenus).catch(() => {});
+  return menuRebuildChain;
+}
+
+async function rebuildMenus() {
+  await chrome.contextMenus.removeAll();
+  const cfg = await loadConfig();
+  for (const def of MENU_DEFS) {
+    const state = cfg.menus[def.id] || { on: true, title: def.title };
+    if (!state.on) continue;
+    await createMenu({ id: def.id, contexts: def.contexts, title: state.title || def.title });
+  }
+  for (const script of cfg.scripts || []) {
+    if (!script.on || !script.name) continue;
+    await createMenu({ id: `script-${script.id}`, contexts: ['page', 'frame'], title: '▶ ' + script.name });
   }
 }
 
@@ -78,80 +92,66 @@ function createMenu(props) {
   });
 }
 
-chrome.runtime.onInstalled.addListener(async () => {
-  const cur = await chrome.storage.sync.get(null);
-  if (cur.menus === undefined) await chrome.storage.sync.set(DEFAULTS);
-  await rebuildMenus();
-});
-chrome.runtime.onStartup.addListener(rebuildMenus);
-chrome.storage.onChanged.addListener((_, area) => { if (area === 'sync') rebuildMenus(); });
-rebuildMenus(); // SW 每次唤醒都自愈菜单状态
-
-/* ---------------- 通知 ---------------- */
+/* ============================== NOTIFY ============================== */
 
 function notify(title, message) {
   try {
-    chrome.notifications.create({
-      type: 'basic', iconUrl: 'icons/icon_128.png', title, message
-    });
-  } catch (e) { /* notifications 不可用时静默 */ }
+    chrome.notifications.create({ type: 'basic', iconUrl: 'icons/icon_128.png', title, message });
+  } catch { /* 通知不可用时静默 */ }
 }
 
-/* ---------------- Aria2 / Motrix JSON-RPC ---------------- */
+/* =============================== RPC ================================ */
 
-async function ariaSend(server, token, url, referer, cookieHeader) {
+/** 推送 URL 到 Aria2 / Motrix（二者同为 aria2 JSON-RPC 协议）。 */
+async function rpcAddUri(server, token, url, referer, cookieHeader) {
   const options = {};
   if (referer) options.referer = referer;
   if (cookieHeader) options.header = ['Cookie: ' + cookieHeader];
-  const body = {
-    jsonrpc: '2.0', id: 'jzx-' + Date.now(), method: 'aria2.addUri',
-    params: token ? [`token:${token}`, [url], options] : [[url], options]
-  };
+  const params = token ? [`token:${token}`, [url], options] : [[url], options];
   const res = await fetch(server, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 'asu-' + Date.now(), method: 'aria2.addUri', params }),
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message || 'RPC 错误');
   return data.result;
 }
 
-async function rpcVersion(server, token) {
-  const body = { jsonrpc: '2.0', id: 'jzx-v', method: 'aria2.getVersion', params: token ? [`token:${token}`] : [] };
-  const res = await fetch(server, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+async function rpcGetVersion(server, token) {
+  const params = token ? [`token:${token}`] : [];
+  const res = await fetch(server, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 'asu-ver', method: 'aria2.getVersion', params }),
+  });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
   return data.result.version;
 }
 
-/* ---------------- 二维码识别（offscreen + jsQR） ---------------- */
+/* ================================ QR ================================ */
+
+/* offscreen 文档负责 canvas 解码；SW 只负责取图与结果等待。 */
 
 async function ensureOffscreen() {
-  let has = false;
+  let exists = false;
   try {
-    if (typeof chrome.offscreen.hasDocument === 'function') has = await chrome.offscreen.hasDocument();
-    else if (typeof chrome.runtime.getContexts === 'function') {
+    if (typeof chrome.offscreen.hasDocument === 'function') {
+      exists = await chrome.offscreen.hasDocument();
+    } else if (typeof chrome.runtime.getContexts === 'function') {
       const ctxs = await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] });
-      has = !!(ctxs && ctxs.length);
+      exists = !!(ctxs && ctxs.length);
     }
-  } catch { has = false; }
-  if (has) return;
-  try { await chrome.offscreen.createDocument({ url: 'offscreen.html', reasons: ['DOM_PARSER'], justification: '二维码图片解码' }); }
-  catch (e) { if (!String(e).includes('single offscreen document')) throw e; }
-}
-
-async function decodeImage(dataUrl) {
-  await ensureOffscreen();
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('识别超时')), 15000);
-    chrome.runtime.onMessage.addListener(function listener(msg) {
-      if (msg && msg.jzxDecode !== undefined) {
-        chrome.runtime.onMessage.removeListener(listener);
-        clearTimeout(timer);
-        msg.jzxDecode ? resolve(msg.text) : reject(new Error(msg.error || '未识别到二维码'));
-      }
+  } catch { exists = false; }
+  if (exists) return;
+  try {
+    await chrome.offscreen.createDocument({
+      url: 'offscreen.html', reasons: ['DOM_PARSER'], justification: '二维码图片解码',
     });
-    chrome.runtime.sendMessage({ jzxDecodeImage: dataUrl }).catch(() => {});
-  });
+  } catch (e) {
+    if (!String(e).includes('single offscreen document')) throw e;
+  }
 }
 
 async function fetchAsDataUrl(url) {
@@ -159,165 +159,240 @@ async function fetchAsDataUrl(url) {
   if (!res.ok) throw new Error('图片下载失败 HTTP ' + res.status);
   const blob = await res.blob();
   if (blob.size > 15 * 1024 * 1024) throw new Error('图片超过 15MB');
-  const buf = await blob.arrayBuffer();
+  const buf = new Uint8Array(await blob.arrayBuffer());
   let bin = '';
-  const arr = new Uint8Array(buf);
-  for (let i = 0; i < arr.length; i += 0x8000) bin += String.fromCharCode.apply(null, arr.subarray(i, i + 0x8000));
+  for (let i = 0; i < buf.length; i += 0x8000) {
+    bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+  }
   const type = blob.type && blob.type.startsWith('image/') ? blob.type : 'image/png';
   return `data:${type};base64,` + btoa(bin);
 }
 
-/* ---------------- 点击分发 ---------------- */
+/** 解码等待器：单一持久监听 + 待决 Promise 表，避免重复监听器堆积。 */
+const decodeWaiters = new Set();
 
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  const c = await cfg();
-  const mid = info.menuItemId;
-  const src = info.srcUrl || info.linkUrl || info.pageUrl || '';
-  const url = info.linkUrl || info.srcUrl || info.pageUrl || '';
-  try {
-    if (mid === 'qr-selection' || mid === 'qr-link-page') {
-      const text = mid === 'qr-selection' ? (info.selectionText || '') : url;
-      chrome.tabs.create({ url: 'tools/qr.html?text=' + encodeURIComponent(text) });
-    } else if (mid === 'qr-scan' || mid === 'qr-jump') {
-      if (!info.srcUrl) { notify('JZX Lite', '未取到图片地址'); return; }
-      notify('JZX Lite', '正在下载并识别图片…');
-      const dataUrl = await fetchAsDataUrl(info.srcUrl);
-      const text = await decodeImage(dataUrl);
-      if (mid === 'qr-scan') {
-        try { await navigator.clipboard.writeText(text); notify('识别成功，已复制', text.slice(0, 180)); }
-        catch { notify('识别成功', text.slice(0, 180)); }
-      } else {
-        if (/^https?:\/\//i.test(text)) chrome.tabs.create({ url: text });
-        else { notify('内容不是链接', text.slice(0, 120)); }
-      }
-    } else if (mid === 'img-baidu') {
-      if (!info.srcUrl) return;
-      chrome.tabs.create({ url: 'https://graph.baidu.com/details?isfromtusoupc=1&tn=pc&image_url=' + encodeURIComponent(info.srcUrl) });
-    } else if (mid === 'img-google') {
-      if (!info.srcUrl) return;
-      chrome.tabs.create({ url: 'https://lens.google.com/uploadbyurl?url=' + encodeURIComponent(info.srcUrl) });
-    } else if (mid === 'pan-search') {
-      const q = (info.selectionText || '').trim();
-      if (!q) { notify('JZX Lite', '请先选中要搜索的文字'); return; }
-      chrome.tabs.create({ url: c.pan.template.replace('{q}', encodeURIComponent(q)) });
-    } else if (mid === 'download') {
-      if (!url) return;
-      chrome.downloads.download({ url });
-      notify('JZX Lite', '已加入浏览器下载');
-    } else if (mid === 'aria-down' || mid === 'motrix-down') {
-      const conf = mid === 'aria-down' ? c.aria : c.motrix;
-      const cookieHeader = await tabCookieHeader(tab);
-      try {
-        await ariaSend(conf.server, conf.token, url, tab?.url || '', cookieHeader);
-        notify(mid === 'aria-down' ? '已推送到 Aria2' : '已推送到 Motrix', url.slice(0, 120));
-      } catch (e) {
-        notify('推送失败', (e.message || '') + ' — 请确认服务已启动并在设置里填对地址/密钥');
-      }
-    } else if (mid === 'show-password') {
-      const [r] = await chrome.scripting.executeScript({
-        target: { tabId: tab.id, allFrames: false },
-        func: () => {
-          const flagged = [...document.querySelectorAll('input[data-jzx-pw="1"]')];
-          if (flagged.length) {
-            flagged.forEach(el => { el.type = 'password'; el.removeAttribute('data-jzx-pw'); });
-            return 'hidden';
-          }
-          const pws = [...document.querySelectorAll('input[type=password]')];
-          pws.forEach(el => { el.type = 'text'; el.dataset.jzxPw = '1'; });
-          return 'shown:' + pws.length;
-        }
-      });
-      const res = r?.result;
-      if (res === 'hidden') notify('JZX Lite', '密码框已还原为圆点');
-      else if (res && res.startsWith('shown')) notify('JZX Lite', '已显示 ' + res.split(':')[1] + ' 个密码框（再点一次还原）');
-      else notify('JZX Lite', '本页没有找到密码框');
-    } else if (mid === 'cookie-tool') {
-      chrome.tabs.create({ url: 'tools/cookie.html' });
-    } else if (mid === 'open-options') {
-      chrome.runtime.openOptionsPage();
-    } else if (String(mid).startsWith('script-')) {
-      const sid = String(mid).slice(7);
-      const s = (c.scripts || []).find(x => String(x.id) === sid);
-      if (!s || !tab?.id) return;
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id, allFrames: false },
-        world: 'MAIN',
-        func: (code) => { (0, eval)(code); },
-        args: [s.code]
-      });
-      notify('自定义脚本已执行', s.name);
-    }
-  } catch (e) {
-    notify('JZX Lite 出错了', String(e.message || e).slice(0, 160));
+chrome.runtime.onMessage.addListener(msg => {
+  if (msg && msg.asuDecode !== undefined) {
+    for (const waiter of decodeWaiters) waiter(msg);
+    decodeWaiters.clear();
   }
 });
 
-async function tabCookieHeader(tab) {
+async function decodeQrImage(dataUrl) {
+  await ensureOffscreen();
+  const task = new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      decodeWaiters.delete(waiter);
+      reject(new Error('识别超时'));
+    }, 15000);
+    const waiter = msg => {
+      clearTimeout(timer);
+      msg.asuDecode ? resolve(msg.text) : reject(new Error(msg.error || '未识别到二维码'));
+    };
+    decodeWaiters.add(waiter);
+  });
+  chrome.runtime.sendMessage({ asuDecodeImage: dataUrl }).catch(() => {});
+  return task;
+}
+
+/* ============================= HANDLERS ============================= */
+
+/** 取当前标签页站点 Cookie 的请求头字符串（推送下载时附带鉴权）。 */
+async function getCookieHeader(tab) {
   try {
-    if (!tab?.url) return '';
-    const u = new URL(tab.url);
-    const cookies = await chrome.cookies.getAll({ domain: u.hostname });
-    return cookies.map(x => `${x.name}=${x.value}`).join('; ');
+    const host = new URL(tab.url).hostname;
+    const cookies = await chrome.cookies.getAll({ domain: host });
+    return cookies.map(c => `${c.name}=${c.value}`).join('; ');
   } catch { return ''; }
 }
 
-/* ---------------- 代理管理 ---------------- */
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  const cfg = await loadConfig();
+  const menuId = String(info.menuItemId);
+  const url = info.linkUrl || info.srcUrl || info.pageUrl || '';
+  try {
+    switch (menuId) {
+      case 'qr-selection':
+      case 'qr-link-page': {
+        const text = menuId === 'qr-selection' ? (info.selectionText || '') : url;
+        chrome.tabs.create({ url: 'tools/qr.html?text=' + encodeURIComponent(text) });
+        break;
+      }
+      case 'qr-scan':
+      case 'qr-jump': {
+        if (!info.srcUrl) { notify(BRAND, '未取到图片地址'); break; }
+        notify(BRAND, '正在下载并识别图片…');
+        const dataUrl = await fetchAsDataUrl(info.srcUrl);
+        const text = await decodeQrImage(dataUrl);
+        if (menuId === 'qr-jump' && /^https?:\/\//i.test(text)) {
+          chrome.tabs.create({ url: text });
+        } else {
+          try { await navigator.clipboard.writeText(text); notify('识别成功，已复制', text.slice(0, 180)); }
+          catch { notify('识别成功', text.slice(0, 180)); }
+        }
+        break;
+      }
+      case 'img-baidu':
+        chrome.tabs.create({ url: 'https://graph.baidu.com/details?isfromtusoupc=1&tn=pc&image_url=' + encodeURIComponent(info.srcUrl || '') });
+        break;
+      case 'img-google':
+        chrome.tabs.create({ url: 'https://lens.google.com/uploadbyurl?url=' + encodeURIComponent(info.srcUrl || '') });
+        break;
+      case 'pan-search': {
+        const q = (info.selectionText || '').trim();
+        if (!q) { notify(BRAND, '请先选中要搜索的文字'); break; }
+        chrome.tabs.create({ url: cfg.pan.template.replace('{q}', encodeURIComponent(q)) });
+        break;
+      }
+      case 'download':
+        chrome.downloads.download({ url });
+        notify(BRAND, '已加入浏览器下载');
+        break;
+      case 'aria-down':
+      case 'motrix-down': {
+        const conf = menuId === 'aria-down' ? cfg.aria : cfg.motrix;
+        const label = menuId === 'aria-down' ? 'Aria2' : 'Motrix';
+        try {
+          await rpcAddUri(conf.server, conf.token, url, tab?.url || '', await getCookieHeader(tab));
+          notify(`已推送到 ${label}`, url.slice(0, 120));
+        } catch (e) {
+          notify(`推送到 ${label} 失败`, `${e.message || e} — 请确认服务已启动，并在设置里核对地址/密钥`);
+        }
+        break;
+      }
+      case 'show-password': {
+        const [r] = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: () => {
+            const revealed = [...document.querySelectorAll('input[data-asu-pw="1"]')];
+            if (revealed.length) {
+              revealed.forEach(el => { el.type = 'password'; el.removeAttribute('data-asu-pw'); });
+              return 'hidden';
+            }
+            const boxes = [...document.querySelectorAll('input[type=password]')];
+            boxes.forEach(el => { el.type = 'text'; el.dataset.asuPw = '1'; });
+            return 'shown:' + boxes.length;
+          },
+        });
+        const result = r?.result;
+        if (result === 'hidden') notify(BRAND, '密码框已还原为圆点');
+        else if (result?.startsWith('shown')) notify(BRAND, `已显示 ${result.split(':')[1]} 个密码框（再点一次还原）`);
+        else notify(BRAND, '本页没有找到密码框');
+        break;
+      }
+      case 'cookie-tool':
+        chrome.tabs.create({ url: 'tools/cookie.html' });
+        break;
+      case 'open-options':
+        chrome.runtime.openOptionsPage();
+        break;
+      default:
+        if (menuId.startsWith('script-')) {
+          const script = (cfg.scripts || []).find(s => menuId === 'script-' + s.id);
+          if (script && tab?.id) {
+            await chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              world: 'MAIN',
+              func: code => { (0, eval)(code); },
+              args: [script.code],
+            });
+            notify('自定义脚本已执行', script.name);
+          }
+        }
+    }
+  } catch (e) {
+    notify(BRAND + ' 出错了', String(e.message || e).slice(0, 160));
+  }
+});
+
+/* ============================== PROXY =============================== */
 
 function buildPacFromRules(rules, bypass) {
   const entries = (rules || []).map(r => ({
     domain: (r.domain || '').replace(/^\*\./, '').toLowerCase(),
-    wildcard: (r.domain || '').startsWith('*.'),
-    host: r.host, port: Number(r.port) || 80, scheme: (r.scheme || 'HTTP').toUpperCase()
+    host: r.host,
+    port: Number(r.port) || 80,
+    scheme: (r.scheme || 'HTTP').toUpperCase(),
   }));
-  const bypassArr = JSON.stringify(bypass || []);
-  return `
-function FindProxyForURL(url, host) {
-  var bypass = ${bypassArr};
+  return `function FindProxyForURL(url, host) {
+  var bypass = ${JSON.stringify(bypass || [])};
   for (var i = 0; i < bypass.length; i++) {
     if (host === bypass[i] || (bypass[i] === '<local>' && host.indexOf('.') === -1)) return 'DIRECT';
   }
   var rules = ${JSON.stringify(entries)};
   for (var j = 0; j < rules.length; j++) {
     var r = rules[j];
-    var hit = r.wildcard ? (host === r.domain || host.endsWith('.' + r.domain)) : (host === r.domain || host.endsWith('.' + r.domain));
-    if (hit) return r.scheme + ' ' + r.host + ':' + r.port + '; DIRECT';
+    if (host === r.domain || host.endsWith('.' + r.domain)) {
+      return r.scheme + ' ' + r.host + ':' + r.port + '; DIRECT';
+    }
   }
   return 'DIRECT';
 }`;
 }
 
 async function applyProxy() {
-  const c = await cfg();
-  const p = c.proxy;
-  if (p.mode === 'off') { await chrome.proxy.settings.clear({ scope: 'regular' }); return 'off'; }
-  if (p.mode === 'fixed') {
-    await chrome.proxy.settings.set({
-      scope: 'regular',
-      value: { mode: 'fixed_servers', rules: { singleProxy: { scheme: p.fixed.scheme, host: p.fixed.host, port: Number(p.fixed.port) }, bypassList: p.bypassList } }
-    });
-    return 'fixed';
+  const cfg = await loadConfig();
+  const p = cfg.proxy;
+  switch (p.mode) {
+    case 'fixed':
+      await chrome.proxy.settings.set({
+        scope: 'regular',
+        value: {
+          mode: 'fixed_servers',
+          rules: {
+            singleProxy: { scheme: p.fixed.scheme, host: p.fixed.host, port: Number(p.fixed.port) },
+            bypassList: p.bypassList,
+          },
+        },
+      });
+      return 'fixed';
+    case 'pac_url': {
+      const res = await fetch(p.pacUrl);
+      await chrome.proxy.settings.set({
+        scope: 'regular',
+        value: { mode: 'pac_script', value: { data: await res.text() } },
+      });
+      return 'pac_url';
+    }
+    case 'rules':
+      await chrome.proxy.settings.set({
+        scope: 'regular',
+        value: { mode: 'pac_script', value: { data: buildPacFromRules(p.rules, p.bypassList) } },
+      });
+      return 'rules';
+    default:
+      await chrome.proxy.settings.clear({ scope: 'regular' });
+      return 'off';
   }
-  if (p.mode === 'pac_url') {
-    const res = await fetch(p.pacUrl);
-    const text = await res.text();
-    await chrome.proxy.settings.set({ scope: 'regular', value: { mode: 'pac_script', value: { data: text } } });
-    return 'pac_url';
-  }
-  if (p.mode === 'rules') {
-    await chrome.proxy.settings.set({ scope: 'regular', value: { mode: 'pac_script', value: { data: buildPacFromRules(p.rules, p.bypassList) } } });
-    return 'rules';
-  }
-  return 'off';
 }
+
+/* ============================ MESSAGING ============================= */
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   (async () => {
-    if (msg?.jzxApplyProxy) { try { sendResponse({ ok: true, mode: await applyProxy() }); } catch (e) { sendResponse({ ok: false, error: String(e.message || e) }); } }
-    else if (msg?.jzxTestRpc) { try { sendResponse({ ok: true, version: await rpcVersion(msg.server, msg.token) }); } catch (e) { sendResponse({ ok: false, error: String(e.message || e) }); } }
-    else if (msg?.jzxGetCurrentIp) {
-      try { const r = await fetch('https://api.ipify.org?format=json'); const j = await r.json(); sendResponse({ ok: true, ip: j.ip }); }
+    if (msg?.asuApplyProxy) {
+      try { sendResponse({ ok: true, mode: await applyProxy() }); }
       catch (e) { sendResponse({ ok: false, error: String(e.message || e) }); }
+    } else if (msg?.asuTestRpc) {
+      try { sendResponse({ ok: true, version: await rpcGetVersion(msg.server, msg.token) }); }
+      catch (e) { sendResponse({ ok: false, error: String(e.message || e) }); }
+    } else if (msg?.asuGetCurrentIp) {
+      try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        sendResponse({ ok: true, ip: (await res.json()).ip });
+      } catch (e) { sendResponse({ ok: false, error: String(e.message || e) }); }
     }
   })();
-  return true; // async
+  return true; // 异步响应
 });
+
+/* ============================== BOOTSTRAP =========================== */
+
+chrome.runtime.onInstalled.addListener(async () => {
+  const stored = await chrome.storage.sync.get(null);
+  if (stored.menus === undefined) await chrome.storage.sync.set(DEFAULT_CONFIG);
+  await scheduleRebuildMenus();
+});
+chrome.runtime.onStartup.addListener(scheduleRebuildMenus);
+chrome.storage.onChanged.addListener((_, area) => { if (area === 'sync') scheduleRebuildMenus(); });
+scheduleRebuildMenus(); // SW 每次唤醒都自愈菜单状态

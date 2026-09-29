@@ -2,7 +2,7 @@
 
 最后更新：2026-09-29
 
-JZX Lite 百宝箱（下称"本扩展"）尊重并保护用户隐私。本政策说明本扩展处理哪些信息、如何处理。
+阿苏工具箱（下称"本扩展"）尊重并保护用户隐私。本政策说明本扩展处理哪些信息、如何处理。
 
 ## 一句话版本
 
@@ -24,4 +24,4 @@ JZX Lite 百宝箱（下称"本扩展"）尊重并保护用户隐私。本政策
 
 ## 联系
 
-如有疑问请提 [Issue](https://github.com/poboll/jzx-lite/issues)。
+如有疑问请提 [Issue](https://github.com/poboll/asu-toolbox/issues)。

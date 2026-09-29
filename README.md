@@ -1,17 +1,17 @@
-# JZX Lite 百宝箱
+# 阿苏工具箱
 
 <div align="center">
 
-**一个扩展，一揽子服务 —— 集装箱（Chrome 应用商店版）的精神续作**
+**一个扩展，一揽子服务**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-f58220.svg)](CHANGELOG.md)
-[![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285f4.svg)](https://developer.chrome.com/docs/extensions/develop/migrate)
+[![Version](https://img.shields.io/badge/version-2.0.0-f58220.svg)](CHANGELOG.md)
+[![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285f4.svg)](https://developer.chrome.com/docs/docs/extensions/develop/migrate)
 [![License: MIT](https://img.shields.io/badge/License-MIT-18a058.svg)](LICENSE)
 [![Chrome](https://img.shields.io/badge/Chrome%2FArc%2FEdge-%E2%89%A5111-000000.svg)](https://developer.chrome.com/docs/extensions)
 
 *纯本地运行 · 无远程依赖 · 不收集任何数据*
 
-[立即下载](../../releases/latest) · [安装教程](#-安装) · [功能总览](#-功能总览) · [配置指南](#-配置指南) · [常见问题](#-常见问题) · [在线主页](https://poboll.github.io/jzx-lite/)
+[立即下载](../../releases/latest) · [安装教程](#-安装) · [功能总览](#-功能总览) · [配置指南](#-配置指南) · [常见问题](#-常见问题) · [在线主页](https://poboll.github.io/asu-toolbox/)
 
 </div>
 
@@ -21,7 +21,7 @@
 
 「集装箱」曾是很多人的浏览器标配，但它的远程应用商店后端（api.newday.me）已于 2026 年停止服务，叠加 Chrome 淘汰 Manifest V2，原版彻底无法使用。
 
-**JZX Lite** 按 Manifest V3 标准重写了它的核心能力：右键菜单工具集（二维码生成 / 二维码识别 / 以图搜图 / 下载推送 / 显示密码 / Cookie 管理 / 网盘搜索 / 自定义脚本）加一个通用代理管理器。所有功能**打包即用、全部在本地执行**，没有任何需要联网的远程脚本或统计埋点。
+**阿苏工具箱**（v1.x 曾名 JZX Lite 百宝箱）按 Manifest V3 标准重写了它的核心能力：右键菜单工具集（二维码生成 / 二维码识别 / 以图搜图 / 下载推送 / 显示密码 / Cookie 管理 / 网盘搜索 / 自定义脚本）加一个通用代理管理器。所有功能**打包即用、全部在本地执行**，没有任何需要联网的远程脚本或统计埋点。
 
 > 本项目与原「集装箱」（哩呵 @ newday.me）无代码关联、无官方关系，仅致意与致敬。
 
@@ -53,7 +53,7 @@
 
 ### 方式一：下载 Release（推荐）
 
-1. 前往 [Releases](../../releases/latest) 下载 `jzx-lite-v1.0.0.zip`；
+1. 前往 [Releases](../../releases/latest) 下载最新 zip；
 2. 解压到一个**长期保留**的目录（扩展以开发者模式加载，解压目录就是本体）；
 3. 打开浏览器的扩展管理页（地址栏输入 `chrome://extensions`）；
 4. 打开右上角 **开发者模式**；
@@ -63,18 +63,18 @@
 ### 方式二：克隆本仓库
 
 ```bash
-git clone https://github.com/poboll/jzx-lite.git
+git clone https://github.com/poboll/asu-toolbox.git
 ```
 
 然后在扩展管理页「加载已解压的扩展程序」选择仓库目录即可。
 
 ### 更新
 
-覆盖文件夹内容后，到扩展管理页点击 JZX Lite 卡片上的 **重新加载** 按钮。
+覆盖文件夹内容后，到扩展管理页点击阿苏工具箱卡片上的 **重新加载** 按钮。
 
 ## ⚙️ 配置指南
 
-右键菜单 → **JZX Lite 设置**，或点工具栏图标 → ⚙ 全部设置。
+右键菜单 → **阿苏工具箱设置**，或点工具栏图标 → ⚙ 全部设置。
 
 <details>
 <summary><b>推送下载到 Aria2 / Motrix</b>（点击展开）</summary>
@@ -110,7 +110,7 @@ git clone https://github.com/poboll/jzx-lite.git
 设置 → 自定义脚本 → 新建，写好名称与 JS 代码并保存，之后在页面右键 →「▶ 脚本名」即可执行。
 
 - 脚本运行在页面上下文（MAIN world），受目标站点 CSP 限制；
-- 复杂的注入需求建议使用 [脚本猫](https://scriptcat.org/) / 篡改猴 等成熟管理器。
+- 复杂的注入需求建议使用 [篡改猴](https://www.tampermonkey.net/) / [脚本猫](https://scriptcat.org/) 等成熟管理器。
 </details>
 
 ## ❓ 常见问题
@@ -140,13 +140,20 @@ git clone https://github.com/poboll/jzx-lite.git
 </details>
 
 <details>
+<summary>从 JZX Lite 百宝箱升级到 2.0.0 要重新配置吗？</summary>
+
+2.0.0 是更名重构版本，配置结构完全兼容：在新目录加载后按同名设置自动延续；旧 JZX Lite 可直接移除。
+</details>
+
+<details>
 <summary>和原「集装箱」是什么关系？会做应用商店吗？</summary>
 
-没有关系，也不做远程应用商店 —— 那正是原版停服的根源。JZX Lite 的哲学是：功能内置、开箱即用、一切在本地。
+没有关系，也不做远程应用商店 —— 那正是原版停服的根源。阿苏工具箱的哲学是：功能内置、开箱即用、一切在本地。
 </details>
 
 ## 🗺 路线图
 
+- [x] v2.0.0 全面重构：品牌更名、Service Worker 模块化、消息总线规范化
 - [ ] 百度/搜狗搜索结果净化（去广告、直链还原）
 - [ ] 网页限制解除（复制/右键/选择）
 - [ ] 划词翻译深链（聚合多家引擎）
@@ -168,10 +175,9 @@ git clone https://github.com/poboll/jzx-lite.git
 - [集装箱](https://chrome.zzzmh.cn/info/kbgigmcnifmaklccibmlepmahpfdhjch)（哩呵）—— 功能形态的灵感来源
 - [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator)（MIT）—— 二维码生成
 - [jsQR](https://github.com/cozmo/jsQR)（Apache-2.0）—— 二维码识别
-- [Reamd7/notion-zh_CN](https://github.com/Reamd7/notion-zh_CN) 等开源社区的先行者们
 
 第三方组件许可证见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 与 `vendor/LICENSES/`。
 
 ## 📄 许可证
 
-[MIT](LICENSE) © 2026 xiaoshenming。`vendor/` 目录内第三方组件依其原始许可证授权。
+[MIT](LICENSE) © 2026 阿苏（xiaoshenming）。`vendor/` 目录内第三方组件依其原始许可证授权。

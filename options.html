@@ -2,14 +2,14 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>设置 - JZX Lite 百宝箱</title>
+<title>设置 - 阿苏工具箱</title>
 <style>
   :root { --orange:#f58220; }
   * { box-sizing:border-box; }
   body { font:14px/1.7 -apple-system,"PingFang SC",sans-serif; margin:0; background:#f4f5f7; color:#222; }
   .wrap { max-width:760px; margin:0 auto; padding:28px 20px 60px; }
   h1 { font-size:20px; display:flex; align-items:center; gap:10px; }
-  h1::before { content:""; width:26px; height:26px; border-radius:7px; background:var(--orange); }
+  h1::before { content:"苏"; width:26px; height:26px; border-radius:7px; background:var(--orange); color:#fff; font-size:14px; display:grid; place-items:center; }
   nav { display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 20px; }
   nav button { background:#fff; border:1px solid #e5e5e5; border-radius:20px; padding:6px 14px; cursor:pointer; font-size:13px; }
   nav button.on { background:var(--orange); border-color:var(--orange); color:#fff; }
@@ -34,13 +34,11 @@
   #save { position:sticky; bottom:14px; float:right; padding:9px 26px; font-size:14px; box-shadow:0 4px 14px rgba(245,130,32,.4); }
   #msg { position:sticky; bottom:20px; color:#18a058; font-size:13px; margin-left:12px; }
   .hidden { display:none; }
-  table { width:100%; border-collapse:collapse; font-size:12px; }
-  th,td { padding:4px 6px; border-bottom:1px solid #f0f0f0; text-align:left; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>JZX Lite 百宝箱 · 设置</h1>
+  <h1>阿苏工具箱 · 设置</h1>
   <nav id="nav">
     <button data-s="menus" class="on">右键菜单</button>
     <button data-s="download">下载推送</button>
@@ -81,15 +79,14 @@
     </div>
     <div class="card">
       <h2>以图搜图</h2>
-      <div class="desc">图片右键直达。百度接口按图片 URL 提交，防盗链图可能失败（用谷歌 Lens 更稳）。</div>
-      <div class="desc">百度识图与谷歌 Lens 菜单开关在「右键菜单」页。</div>
+      <div class="desc">图片右键直达。百度接口按图片 URL 提交，防盗链图可能失败（用谷歌 Lens 更稳）。两个菜单的开关在「右键菜单」页。</div>
     </div>
   </div>
 
   <div id="s-proxy" class="hidden">
     <div class="card">
       <h2>代理管理</h2>
-      <div class="desc">原集装箱的 newday 订阅后端已停服，这里提供通用代理能力：固定服务器 / PAC 订阅地址 / 域名分流规则。</div>
+      <div class="desc">提供通用代理能力：固定服务器 / PAC 订阅地址 / 域名分流规则。</div>
       <label class="f">模式</label>
       <select id="proxyMode">
         <option value="off">关闭（直连）</option>
@@ -124,7 +121,7 @@
   <div id="s-scripts" class="hidden">
     <div class="card">
       <h2>自定义脚本</h2>
-      <div class="desc">右键页面 →「▶ 脚本名」执行。脚本在页面上下文（MAIN world）运行，受站点 CSP 限制。复杂的注入需求建议用你已装的「脚本猫」。</div>
+      <div class="desc">右键页面 →「▶ 脚本名」执行。脚本在页面上下文（MAIN world）运行，受站点 CSP 限制。复杂的注入需求建议用篡改猴 / 脚本猫。</div>
       <div id="scriptList"></div>
       <div class="row" style="margin-top:10px"><button class="act ghost" id="addScript">＋ 新建脚本</button></div>
     </div>
@@ -142,12 +139,11 @@
       <textarea id="cfgJson" rows="10"></textarea>
     </div>
     <div class="card">
-      <h2>说明</h2>
+      <h2>关于</h2>
       <div class="desc">
-        本扩展为「集装箱」的本地复刻版（原版远程应用商店 api.newday.me 已于 2026 年停服）。<br>
-        · Web Clipper 已用官方 v1.42.0（MV3）以原 ID 复活，账号配置自动延续；<br>
-        · VIP 视频/音乐解析类应用因依赖盗版接口未收录；<br>
-        · ⚠ 请勿移动或删除 Downloads 里的 jzx-lite 与 WebClipper-MV3 文件夹，扩展以「已解压」方式加载，目录即本体。
+        阿苏工具箱 v2.0.0（原 JZX Lite 百宝箱，全面重构更名）。<br>
+        在线主页：poboll.github.io/asu-toolbox · 问题反馈：GitHub Issues<br>
+        ⚠ 请勿移动或删除 Downloads 里的 asu-toolbox 等扩展目录，扩展以「已解压」方式加载，目录即本体。
       </div>
     </div>
   </div>

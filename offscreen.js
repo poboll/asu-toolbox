@@ -1,10 +1,10 @@
 // offscreen 解码页：接收 dataUrl 图片 → jsQR 解码 → 广播结果
-chrome.runtime.onMessage.addListener((msg) => {
-  if (!msg || !msg.jzxDecodeImage) return;
+chrome.runtime.onMessage.addListener(msg => {
+  if (!msg || !msg.asuDecodeImage) return;
   (async () => {
     let ok = false, text = '', error = '';
     try {
-      const img = await loadImage(msg.jzxDecodeImage);
+      const img = await loadImage(msg.asuDecodeImage);
       const canvas = new OffscreenCanvas(img.width, img.height);
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
@@ -15,7 +15,7 @@ chrome.runtime.onMessage.addListener((msg) => {
     } catch (e) {
       error = String(e.message || e);
     }
-    chrome.runtime.sendMessage({ jzxDecode: ok, text, error }).catch(() => {});
+    chrome.runtime.sendMessage({ asuDecode: ok, text, error }).catch(() => {});
   })();
 });
 

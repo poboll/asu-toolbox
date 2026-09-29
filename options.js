@@ -1,4 +1,4 @@
-/* 设置页逻辑 */
+/* 阿苏工具箱 设置页逻辑 */
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 let CFG = null;
@@ -9,17 +9,13 @@ const MENU_NAMES = {
   'img-baidu': '百度识图', 'img-google': '谷歌识图（Lens）',
   'pan-search': '网盘聚合搜索', 'download': '使用浏览器下载',
   'aria-down': '推送到 Aria2', 'motrix-down': '推送到 Motrix',
-  'show-password': '显示/隐藏明文密码', 'cookie-tool': 'Cookie 工具', 'open-options': 'JZX Lite 设置'
+  'show-password': '显示/隐藏明文密码', 'cookie-tool': 'Cookie 工具', 'open-options': '阿苏工具箱设置'
 };
 
+function escAttr(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+
 async function load() {
-  const got = await chrome.storage.sync.get(null);
-  CFG = got && got.menus ? got : null;
-  if (!CFG) {
-    // 未初始化：读默认值（与 background.js DEFAULTS 对齐的最小集）
-    const all = await chrome.storage.sync.get(null);
-    CFG = all;
-  }
+  CFG = await chrome.storage.sync.get(null);
   renderMenus();
   $('#ariaServer').value = CFG.aria?.server || 'http://localhost:6800/jsonrpc';
   $('#ariaToken').value = CFG.aria?.token || '';
@@ -69,11 +65,10 @@ function renderScripts() {
     box.appendChild(div);
   });
   box.querySelectorAll('.sc-del').forEach(b => b.addEventListener('click', () => {
-    CFG.scripts.splice(+b.dataset.idx, 1); renderScripts();
+    CFG.scripts.splice(+b.dataset.idx, 1);
+    renderScripts();
   }));
 }
-
-function escAttr(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
 
 function collect() {
   const menus = { ...CFG.menus };
@@ -82,7 +77,7 @@ function collect() {
     id: (CFG.scripts[i] && CFG.scripts[i].id) || (Date.now() + '-' + i),
     name: n.value.trim(),
     on: $$('.sc-on')[i].checked,
-    code: $$('.sc-code')[i].value
+    code: $$('.sc-code')[i].value,
   })).filter(s => s.name && s.code);
   const rules = $('#rulesText').value.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
     const [domain, host, port, scheme] = l.split(/\s+/);
@@ -97,9 +92,10 @@ function collect() {
       mode: $('#proxyMode').value,
       fixed: { scheme: $('#fixScheme').value, host: $('#fixHost').value.trim(), port: +$('#fixPort').value || 80 },
       pacUrl: $('#pacUrl').value.trim(),
-      rules, bypassList: $('#bypassList').value.split(',').map(x => x.trim()).filter(Boolean)
+      rules,
+      bypassList: $('#bypassList').value.split(',').map(x => x.trim()).filter(Boolean),
     },
-    scripts
+    scripts,
   };
 }
 
@@ -109,7 +105,6 @@ $('#save').addEventListener('click', async () => {
   setTimeout(() => $('#msg').textContent = '', 2500);
 });
 
-/* 导航 */
 $('#nav').addEventListener('click', ev => {
   const b = ev.target.closest('button[data-s]');
   if (!b) return;
@@ -125,49 +120,46 @@ function syncProxySections() {
 }
 $('#proxyMode').addEventListener('change', syncProxySections);
 
-/* RPC 测试 */
-function bindTest(btnId, outId, key) {
+function bindTest(btnId, outId, getServer, getToken) {
   $(btnId).addEventListener('click', async () => {
     $(outId).textContent = '测试中…';
-    const data = key === 'aria'
-      ? { jzxTestRpc: true, server: $('#ariaServer').value.trim(), token: $('#ariaToken').value.trim() }
-      : { jzxTestRpc: true, server: $('#motrixServer').value.trim(), token: $('#motrixToken').value.trim() };
-    const res = await chrome.runtime.sendMessage(data);
+    const res = await chrome.runtime.sendMessage({ asuTestRpc: true, server: getServer(), token: getToken() });
     $(outId).textContent = res?.ok ? '✔ 连接成功，版本 ' + res.version : '✘ ' + (res?.error || '失败');
   });
 }
-bindTest('#testAria', '#testAriaOut', 'aria');
-bindTest('#testMotrix', '#testMotrixOut', 'motrix');
+bindTest('#testAria', '#testAriaOut', () => $('#ariaServer').value.trim(), () => $('#ariaToken').value.trim());
+bindTest('#testMotrix', '#testMotrixOut', () => $('#motrixServer').value.trim(), () => $('#motrixToken').value.trim());
 
-/* 代理应用与出口 IP */
 $('#applyProxy').addEventListener('click', async () => {
   await chrome.storage.sync.set(collect());
-  const res = await chrome.runtime.sendMessage({ jzxApplyProxy: true });
+  const res = await chrome.runtime.sendMessage({ asuApplyProxy: true });
   $('#proxyOut').textContent = res?.ok ? '✔ 已应用（模式 ' + res.mode + '）' : '✘ ' + (res?.error || '失败');
 });
+
 $('#checkIp').addEventListener('click', async () => {
   $('#proxyOut').textContent = '查询中…';
-  const res = await chrome.runtime.sendMessage({ jzxGetCurrentIp: true });
+  const res = await chrome.runtime.sendMessage({ asuGetCurrentIp: true });
   $('#proxyOut').textContent = res?.ok ? '当前出口 IP：' + res.ip : '查询失败';
 });
 
 $('#addScript').addEventListener('click', () => {
   CFG.scripts = CFG.scripts || [];
-  CFG.scripts.push({ id: Date.now() + '', name: '新脚本', on: true, code: "alert('Hello JZX');" });
+  CFG.scripts.push({ id: Date.now() + '', name: '新脚本', on: true, code: "alert('Hello 阿苏');" });
   renderScripts();
 });
 
 $('#exportCfg').addEventListener('click', async () => {
-  const all = await chrome.storage.sync.get(null);
-  $('#cfgJson').value = JSON.stringify(all, null, 2);
+  $('#cfgJson').value = JSON.stringify(await chrome.storage.sync.get(null), null, 2);
 });
+
 $('#importCfg').addEventListener('click', async () => {
   try {
-    const obj = JSON.parse($('#cfgJson').value);
-    await chrome.storage.sync.set(obj);
+    await chrome.storage.sync.set(JSON.parse($('#cfgJson').value));
     await load();
     $('#msg').textContent = '✔ 已恢复';
-  } catch (e) { $('#msg').textContent = '✘ JSON 解析失败：' + e.message; }
+  } catch (e) {
+    $('#msg').textContent = '✘ JSON 解析失败：' + e.message;
+  }
   setTimeout(() => $('#msg').textContent = '', 2500);
 });
 

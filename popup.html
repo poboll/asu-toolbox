@@ -6,16 +6,16 @@
   :root { --orange:#f58220; }
   * { box-sizing:border-box; }
   body { width:300px; margin:0; font:13px/1.6 -apple-system,"PingFang SC",sans-serif; color:#222; background:#fff; }
-  header { background:var(--orange); color:#fff; padding:12px 14px; font-weight:600; font-size:14px; display:flex; justify-content:space-between; align-items:center; }
-  header .sub { font-weight:400; font-size:11px; opacity:.9; }
+  header { background:linear-gradient(135deg,var(--orange),#ff9f4d); color:#fff; padding:13px 14px; display:flex; justify-content:space-between; align-items:center; }
+  header .name { font-weight:700; font-size:15px; letter-spacing:.5px; }
+  header .sub { font-weight:400; font-size:11px; opacity:.92; }
   section { padding:10px 14px; }
   .row { display:flex; gap:8px; margin:6px 0; }
-  button { flex:1; background:#f5f5f5; border:1px solid #eee; color:#333; padding:7px 6px; border-radius:8px; cursor:pointer; font-size:12px; }
+  button { flex:1; background:#f5f5f5; border:1px solid #eee; color:#333; padding:7px 6px; border-radius:8px; cursor:pointer; font-size:12px; transition:.12s; }
   button:hover { background:#ffedd9; border-color:var(--orange); }
-  button.primary { background:var(--orange); color:#fff; border-color:var(--orange); }
   .card { background:#f9f9f9; border-radius:10px; padding:10px 12px; margin:8px 0; }
   .toggle-row { display:flex; justify-content:space-between; align-items:center; padding:2px 0; }
-  .sw { position:relative; width:34px; height:20px; }
+  .sw { position:relative; width:34px; height:20px; flex:none; }
   .sw input { display:none; }
   .sw i { position:absolute; inset:0; background:#ddd; border-radius:10px; transition:.15s; cursor:pointer; }
   .sw i::after { content:""; position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; top:2px; left:2px; transition:.15s; }
@@ -27,7 +27,7 @@
 </style>
 </head>
 <body>
-<header><span>JZX Lite 百宝箱</span><span class="sub">集装箱复刻</span></header>
+<header><span class="name">阿苏工具箱</span><span class="sub">一个扩展，一揽子服务</span></header>
 <section>
   <div class="card">
     <div class="toggle-row"><span>代理（当前：<b id="proxyMode">…</b>）</span>
@@ -44,6 +44,6 @@
   </div>
 </section>
 <div id="msg"></div>
-<footer><a id="opts">⚙ 全部设置</a><span>v1.0.0</span></footer>
+<footer><a id="opts">⚙ 全部设置</a><span>v2.0.0</span></footer>
 <script src="popup.js"></script>
 </body></html>
