@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+  :root { --orange:#f58220; }
+  * { box-sizing:border-box; }
+  body { width:300px; margin:0; font:13px/1.6 -apple-system,"PingFang SC",sans-serif; color:#222; background:#fff; }
+  header { background:var(--orange); color:#fff; padding:12px 14px; font-weight:600; font-size:14px; display:flex; justify-content:space-between; align-items:center; }
+  header .sub { font-weight:400; font-size:11px; opacity:.9; }
+  section { padding:10px 14px; }
+  .row { display:flex; gap:8px; margin:6px 0; }
+  button { flex:1; background:#f5f5f5; border:1px solid #eee; color:#333; padding:7px 6px; border-radius:8px; cursor:pointer; font-size:12px; }
+  button:hover { background:#ffedd9; border-color:var(--orange); }
+  button.primary { background:var(--orange); color:#fff; border-color:var(--orange); }
+  .card { background:#f9f9f9; border-radius:10px; padding:10px 12px; margin:8px 0; }
+  .toggle-row { display:flex; justify-content:space-between; align-items:center; padding:2px 0; }
+  .sw { position:relative; width:34px; height:20px; }
+  .sw input { display:none; }
+  .sw i { position:absolute; inset:0; background:#ddd; border-radius:10px; transition:.15s; cursor:pointer; }
+  .sw i::after { content:""; position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; top:2px; left:2px; transition:.15s; }
+  .sw input:checked + i { background:var(--orange); }
+  .sw input:checked + i::after { left:16px; }
+  footer { padding:8px 14px 12px; display:flex; justify-content:space-between; color:#999; font-size:11px; }
+  footer a { color:var(--orange); text-decoration:none; cursor:pointer; }
+  #msg { color:#18a058; font-size:11px; padding:0 14px 8px; min-height:16px; }
+</style>
+</head>
+<body>
+<header><span>JZX Lite 百宝箱</span><span class="sub">集装箱复刻</span></header>
+<section>
+  <div class="card">
+    <div class="toggle-row"><span>代理（当前：<b id="proxyMode">…</b>）</span>
+      <label class="sw"><input type="checkbox" id="proxyOn"><i></i></label>
+    </div>
+  </div>
+  <div class="row">
+    <button id="showPw">👁 显示本页密码</button>
+    <button id="qrPage">🔲 页面二维码</button>
+  </div>
+  <div class="row">
+    <button id="qrTool">二维码工具</button>
+    <button id="cookieTool">Cookie 工具</button>
+  </div>
+</section>
+<div id="msg"></div>
+<footer><a id="opts">⚙ 全部设置</a><span>v1.0.0</span></footer>
+<script src="popup.js"></script>
+</body></html>

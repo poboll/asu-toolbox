@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "JZX Lite 百宝箱",
+  "version": "1.0.0",
+  "description": "集装箱精神续作（MV3）：右键二维码生成/识别、以图搜图、Aria2/Motrix 推送、显示密码、Cookie 工具、网盘搜索、自定义脚本、代理管理。全部本地运行，无远程依赖。",
+  "permissions": [
+    "contextMenus",
+    "storage",
+    "downloads",
+    "notifications",
+    "cookies",
+    "scripting",
+    "activeTab",
+    "proxy",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "JZX Lite 百宝箱",
+    "default_icon": {
+      "16": "icons/icon_16.png",
+      "48": "icons/icon_48.png",
+      "128": "icons/icon_128.png"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "icons": {
+    "16": "icons/icon_16.png",
+    "48": "icons/icon_48.png",
+    "128": "icons/icon_128.png"
+  }
+}

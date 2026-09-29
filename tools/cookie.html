@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Cookie 工具 - JZX Lite</title>
+<style>
+  :root { --orange:#f58220; }
+  * { box-sizing:border-box; }
+  body { font:13px/1.6 -apple-system,"PingFang SC",sans-serif; margin:0; background:#f7f8fa; color:#222; }
+  .wrap { max-width:860px; margin:24px auto; padding:0 16px 40px; }
+  h1 { font-size:18px; display:flex; align-items:center; gap:8px; }
+  h1::before { content:""; width:22px; height:22px; border-radius:6px; background:var(--orange); display:inline-block; }
+  .card { background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 1px 4px rgba(0,0,0,.06); margin-bottom:14px; }
+  .row { display:flex; gap:8px; margin:10px 0; flex-wrap:wrap; align-items:center; }
+  button { background:var(--orange); border:none; color:#fff; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:13px; }
+  button.ghost { background:#eee; color:#333; }
+  button.danger { background:#e5484d; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th,td { text-align:left; padding:5px 8px; border-bottom:1px solid #f0f0f0; word-break:break-all; }
+  th { color:#888; font-weight:500; background:#fafafa; position:sticky; top:0; }
+  .host { font-weight:600; }
+  textarea { width:100%; height:120px; font:12px/1.5 ui-monospace,monospace; border:1px solid #ddd; border-radius:8px; padding:8px; }
+  .tip { color:#888; font-size:12px; }
+  #err { color:#e5484d; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Cookie 工具</h1>
+  <div class="card">
+    <div>当前站点：<span class="host" id="host">（请先打开一个网页再进本页）</span></div>
+    <div class="row">
+      <button id="reload" class="ghost">刷新</button>
+      <button id="copyHeader">复制为请求头</button>
+      <button id="copyNetscape">导出 Netscape（wget/curl/aria2 可用）</button>
+      <button id="copyJson">复制 JSON</button>
+      <button id="delAll" class="danger">清空本站 Cookie</button>
+    </div>
+    <div class="tip" id="err"></div>
+  </div>
+  <div class="card">
+    <table><thead><tr><th>名称</th><th>值</th><th>域</th><th>过期</th></tr></thead>
+    <tbody id="rows"></tbody></table>
+  </div>
+  <div class="card">
+    <div class="tip">导出内容：</div>
+    <textarea id="out" readonly></textarea>
+  </div>
+</div>
+<script src="cookie.js"></script>
+</body></html>

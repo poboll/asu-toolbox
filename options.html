@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>设置 - JZX Lite 百宝箱</title>
+<style>
+  :root { --orange:#f58220; }
+  * { box-sizing:border-box; }
+  body { font:14px/1.7 -apple-system,"PingFang SC",sans-serif; margin:0; background:#f4f5f7; color:#222; }
+  .wrap { max-width:760px; margin:0 auto; padding:28px 20px 60px; }
+  h1 { font-size:20px; display:flex; align-items:center; gap:10px; }
+  h1::before { content:""; width:26px; height:26px; border-radius:7px; background:var(--orange); }
+  nav { display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 20px; }
+  nav button { background:#fff; border:1px solid #e5e5e5; border-radius:20px; padding:6px 14px; cursor:pointer; font-size:13px; }
+  nav button.on { background:var(--orange); border-color:var(--orange); color:#fff; }
+  .card { background:#fff; border-radius:14px; padding:18px 22px; box-shadow:0 1px 4px rgba(0,0,0,.05); margin-bottom:16px; }
+  h2 { font-size:15px; margin:0 0 10px; }
+  .desc { color:#888; font-size:12px; margin:4px 0 10px; }
+  label.f { display:block; margin:8px 0 2px; font-size:12px; color:#666; }
+  input[type=text], input[type=url], input[type=number], select, textarea { width:100%; padding:7px 10px; border:1px solid #ddd; border-radius:8px; font:13px/1.5 inherit; }
+  textarea { font:12px/1.6 ui-monospace,monospace; }
+  .row { display:flex; gap:10px; }
+  .row > * { flex:1; }
+  button.act { background:var(--orange); color:#fff; border:none; border-radius:8px; padding:7px 16px; cursor:pointer; font-size:13px; }
+  button.act.ghost { background:#eee; color:#333; }
+  .menu-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px 18px; }
+  .toggle-row { display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px dashed #f0f0f0; }
+  .sw { position:relative; width:34px; height:20px; flex:none; }
+  .sw input { display:none; }
+  .sw i { position:absolute; inset:0; background:#ddd; border-radius:10px; transition:.15s; cursor:pointer; }
+  .sw i::after { content:""; position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; top:2px; left:2px; transition:.15s; }
+  .sw input:checked + i { background:var(--orange); }
+  .sw input:checked + i::after { left:16px; }
+  #save { position:sticky; bottom:14px; float:right; padding:9px 26px; font-size:14px; box-shadow:0 4px 14px rgba(245,130,32,.4); }
+  #msg { position:sticky; bottom:20px; color:#18a058; font-size:13px; margin-left:12px; }
+  .hidden { display:none; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th,td { padding:4px 6px; border-bottom:1px solid #f0f0f0; text-align:left; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>JZX Lite 百宝箱 · 设置</h1>
+  <nav id="nav">
+    <button data-s="menus" class="on">右键菜单</button>
+    <button data-s="download">下载推送</button>
+    <button data-s="search">识图与网盘</button>
+    <button data-s="proxy">代理</button>
+    <button data-s="scripts">自定义脚本</button>
+    <button data-s="backup">备份</button>
+  </nav>
+
+  <div id="s-menus">
+    <div class="card">
+      <h2>右键菜单开关</h2>
+      <div class="desc">关闭的项不会出现在右键菜单里。</div>
+      <div class="menu-grid" id="menuList"></div>
+    </div>
+  </div>
+
+  <div id="s-download" class="hidden">
+    <div class="card">
+      <h2>Aria2</h2>
+      <label class="f">RPC 地址</label><input type="url" id="ariaServer">
+      <label class="f">RPC 密钥 token（没有留空）</label><input type="text" id="ariaToken">
+      <div class="row" style="margin-top:8px"><button class="act ghost" id="testAria">测试连接</button><span id="testAriaOut" class="desc"></span></div>
+    </div>
+    <div class="card">
+      <h2>Motrix</h2>
+      <label class="f">RPC 地址（Motrix 默认 16800 端口）</label><input type="url" id="motrixServer">
+      <label class="f">RPC 密钥 token（在 Motrix 设置里查看）</label><input type="text" id="motrixToken">
+      <div class="row" style="margin-top:8px"><button class="act ghost" id="testMotrix">测试连接</button><span id="testMotrixOut" class="desc"></span></div>
+    </div>
+  </div>
+
+  <div id="s-search" class="hidden">
+    <div class="card">
+      <h2>网盘聚合搜索</h2>
+      <div class="desc">选中文字后右键搜索网盘资源。URL 模板里用 <b>{q}</b> 表示关键词。原大力盘若失效可换成任何网盘搜索引擎。</div>
+      <label class="f">搜索 URL 模板</label><input type="url" id="panTemplate">
+    </div>
+    <div class="card">
+      <h2>以图搜图</h2>
+      <div class="desc">图片右键直达。百度接口按图片 URL 提交，防盗链图可能失败（用谷歌 Lens 更稳）。</div>
+      <div class="desc">百度识图与谷歌 Lens 菜单开关在「右键菜单」页。</div>
+    </div>
+  </div>
+
+  <div id="s-proxy" class="hidden">
+    <div class="card">
+      <h2>代理管理</h2>
+      <div class="desc">原集装箱的 newday 订阅后端已停服，这里提供通用代理能力：固定服务器 / PAC 订阅地址 / 域名分流规则。</div>
+      <label class="f">模式</label>
+      <select id="proxyMode">
+        <option value="off">关闭（直连）</option>
+        <option value="fixed">固定代理服务器</option>
+        <option value="pac_url">PAC 订阅 URL</option>
+        <option value="rules">域名分流规则</option>
+      </select>
+      <div id="proxyFixed">
+        <div class="row">
+          <div><label class="f">协议</label>
+            <select id="fixScheme"><option>http</option><option>https</option><option>socks4</option><option>socks5</option></select></div>
+          <div><label class="f">主机</label><input type="text" id="fixHost"></div>
+          <div><label class="f">端口</label><input type="number" id="fixPort"></div>
+        </div>
+      </div>
+      <div id="proxyPac">
+        <label class="f">PAC URL（订阅地址，可以是任何 http(s) 链接）</label><input type="url" id="pacUrl">
+      </div>
+      <div id="proxyRules">
+        <label class="f">分流规则：每行一条「域名 主机 端口 [协议]」，如 <code>*.google.com 127.0.0.1 7890</code>（协议可省略默认 http）</label>
+        <textarea id="rulesText" rows="6" placeholder="*.google.com 127.0.0.1 7890&#10;tensorflow.org 127.0.0.1 7890 socks5"></textarea>
+      </div>
+      <label class="f">绕过列表（逗号分隔，不走向代理的地址）</label><input type="text" id="bypassList">
+      <div class="row" style="margin-top:10px">
+        <button class="act" id="applyProxy">应用代理设置</button>
+        <button class="act ghost" id="checkIp">查看当前出口 IP</button>
+        <span class="desc" id="proxyOut"></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="s-scripts" class="hidden">
+    <div class="card">
+      <h2>自定义脚本</h2>
+      <div class="desc">右键页面 →「▶ 脚本名」执行。脚本在页面上下文（MAIN world）运行，受站点 CSP 限制。复杂的注入需求建议用你已装的「脚本猫」。</div>
+      <div id="scriptList"></div>
+      <div class="row" style="margin-top:10px"><button class="act ghost" id="addScript">＋ 新建脚本</button></div>
+    </div>
+  </div>
+
+  <div id="s-backup" class="hidden">
+    <div class="card">
+      <h2>备份 / 恢复</h2>
+      <div class="desc">全部设置以 JSON 导出，换机或重装后可一键恢复。</div>
+      <div class="row">
+        <button class="act ghost" id="exportCfg">导出设置</button>
+        <button class="act ghost" id="importCfg">从文本恢复</button>
+      </div>
+      <label class="f" style="margin-top:10px">设置 JSON</label>
+      <textarea id="cfgJson" rows="10"></textarea>
+    </div>
+    <div class="card">
+      <h2>说明</h2>
+      <div class="desc">
+        本扩展为「集装箱」的本地复刻版（原版远程应用商店 api.newday.me 已于 2026 年停服）。<br>
+        · Web Clipper 已用官方 v1.42.0（MV3）以原 ID 复活，账号配置自动延续；<br>
+        · VIP 视频/音乐解析类应用因依赖盗版接口未收录；<br>
+        · ⚠ 请勿移动或删除 Downloads 里的 jzx-lite 与 WebClipper-MV3 文件夹，扩展以「已解压」方式加载，目录即本体。
+      </div>
+    </div>
+  </div>
+
+  <button class="act" id="save">保存全部设置</button><span id="msg"></span>
+</div>
+
+<script src="options.js"></script>
+</body></html>
