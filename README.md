@@ -2,6 +2,8 @@
 
 <div align="center">
 
+<img src="docs/social-preview.png" alt="阿苏工具箱" width="640">
+
 **一个扩展，一揽子服务**
 
 [![Version](https://img.shields.io/badge/version-2.1.0-f58220.svg)](CHANGELOG.md)
