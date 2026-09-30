@@ -7,6 +7,9 @@ const MENU_NAMES = {
   'qr-selection': '生成选区二维码', 'qr-link-page': '生成链接/页面二维码',
   'qr-scan': '识别图片二维码', 'qr-jump': '识别二维码并跳转',
   'img-baidu': '百度识图', 'img-google': '谷歌识图（Lens）',
+  'translate-selection': '翻译选中文本（菜单组）', 'translate-google': '├ 谷歌翻译',
+  'translate-baidu': '├ 百度翻译', 'translate-deepl': '├ DeepL 翻译', 'translate-bing': '└ 必应翻译',
+  'unlock-copy': '解除本页复制/右键限制',
   'pan-search': '网盘聚合搜索', 'download': '使用浏览器下载',
   'aria-down': '推送到 Aria2', 'motrix-down': '推送到 Motrix',
   'show-password': '显示/隐藏明文密码', 'cookie-tool': 'Cookie 工具', 'open-options': '阿苏工具箱设置'
@@ -22,6 +25,10 @@ async function load() {
   $('#motrixServer').value = CFG.motrix?.server || 'http://localhost:16800/jsonrpc';
   $('#motrixToken').value = CFG.motrix?.token || '';
   $('#panTemplate').value = CFG.pan?.template || 'https://www.dalipan.com/search?key={q}';
+  const cl = CFG.cleaner || {};
+  $('#cleanerBaidu').checked = cl.baidu !== false;
+  $('#cleanerSogou').checked = cl.sogou !== false;
+  $('#cleanerDeredirect').checked = cl.deredirect !== false;
   const p = CFG.proxy || {};
   $('#proxyMode').value = p.mode || 'off';
   $('#fixScheme').value = p.fixed?.scheme || 'http';
@@ -88,6 +95,11 @@ function collect() {
     aria: { server: $('#ariaServer').value.trim(), token: $('#ariaToken').value.trim() },
     motrix: { server: $('#motrixServer').value.trim(), token: $('#motrixToken').value.trim() },
     pan: { template: $('#panTemplate').value.trim() },
+    cleaner: {
+      baidu: $('#cleanerBaidu').checked,
+      sogou: $('#cleanerSogou').checked,
+      deredirect: $('#cleanerDeredirect').checked,
+    },
     proxy: {
       mode: $('#proxyMode').value,
       fixed: { scheme: $('#fixScheme').value, host: $('#fixHost').value.trim(), port: +$('#fixPort').value || 80 },

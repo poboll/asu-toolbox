@@ -2,9 +2,9 @@
   "manifest_version": 3,
   "name": "阿苏工具箱",
   "short_name": "阿苏",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "一个扩展，一揽子服务。右键二维码生成/识别、以图搜图、Aria2/Motrix 推送、显示密码、Cookie 工具、网盘搜索、自定义脚本、代理管理。纯本地运行，无远程依赖。",
-  "author": "xiaoshenming",
+  "author": "poboll",
   "homepage_url": "https://poboll.github.io/asu-toolbox/",
   "minimum_chrome_version": "111",
   "permissions": [
@@ -24,6 +24,18 @@
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.baidu.com/*",
+        "https://m.baidu.com/*",
+        "https://www.sogou.com/*",
+        "https://sogou.com/*"
+      ],
+      "js": ["content/cleaner.js"],
+      "run_at": "document_start"
+    }
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "阿苏工具箱",

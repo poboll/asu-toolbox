@@ -1,4 +1,4 @@
-/* Cookie 工具：列出当前活动标签站点的 Cookie，支持三种格式导出与清空 */
+/* Cookie 工具：列出当前活动标签站点的 Cookie，支持按条删除/编辑、新增与三种格式导出 */
 const $ = s => document.querySelector(s);
 let current = [];
 
@@ -9,6 +9,10 @@ async function activeTab() {
 
 function esc(s) {
   return String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+}
+
+function cookieUrl(c) {
+  return `http${c.secure ? 's' : ''}://${c.domain.startsWith('.') ? c.domain.slice(1) : c.domain}${c.path || '/'}`;
 }
 
 async function load() {
@@ -30,12 +34,72 @@ async function load() {
   } catch (e) {
     err.textContent = '读取失败：' + e.message;
   }
-  rows.innerHTML = current.map(c => {
+  rows.innerHTML = current.map((c, i) => {
     const exp = c.session ? '会话' : new Date(c.expirationDate * 1000).toLocaleString();
-    const val = c.value.length > 60 ? c.value.slice(0, 60) + '…' : c.value;
-    return `<tr><td>${esc(c.name)}</td><td>${esc(val)}</td><td>${esc(c.domain)}</td><td>${esc(exp)}</td></tr>`;
-  }).join('') || '<tr><td colspan="4" class="tip">没有 Cookie</td></tr>';
+    const val = c.value.length > 40 ? c.value.slice(0, 40) + '…' : c.value;
+    return `<tr>
+      <td>${esc(c.name)}</td>
+      <td class="v" data-i="${i}" title="点击编辑值">${esc(val)}</td>
+      <td>${esc(c.domain)}</td>
+      <td>${esc(exp)}</td>
+      <td><button class="mini danger del" data-i="${i}">删除</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" class="tip">没有 Cookie</td></tr>';
+
+  rows.querySelectorAll('.del').forEach(b => b.addEventListener('click', () => removeOne(+b.dataset.i)));
+  rows.querySelectorAll('.v').forEach(v => v.addEventListener('click', () => editValue(+v.dataset.i)));
 }
+
+async function removeOne(i) {
+  const c = current[i];
+  if (!c) return;
+  try {
+    await chrome.cookies.remove({ url: cookieUrl(c), name: c.name });
+    ok(`已删除 ${c.name}`);
+    load();
+  } catch (e) {
+    $('#err').textContent = '删除失败：' + e.message;
+  }
+}
+
+async function editValue(i) {
+  const c = current[i];
+  if (!c) return;
+  const nv = prompt(`修改 Cookie「${c.name}」的值：`, c.value);
+  if (nv === null || nv === c.value) return;
+  const details = {
+    url: cookieUrl(c),
+    name: c.name,
+    value: nv,
+    path: c.path || '/',
+    secure: c.secure,
+    httpOnly: c.httpOnly,
+  };
+  if (!c.hostOnly) details.domain = c.domain;
+  if (!c.session) details.expirationDate = c.expirationDate;
+  try {
+    await chrome.cookies.set(details);
+    ok(`已更新 ${c.name}`);
+    load();
+  } catch (e) {
+    $('#err').textContent = '更新失败：' + e.message;
+  }
+}
+
+$('#add').addEventListener('click', async () => {
+  const tab = await activeTab();
+  if (!tab || !/^https?:/i.test(tab.url || '')) return;
+  const name = prompt('新 Cookie 的名称：');
+  if (!name) return;
+  const value = prompt(`「${name}」的值：`, '') ?? '';
+  try {
+    await chrome.cookies.set({ url: tab.url.split('#')[0], name, value, path: '/' });
+    ok(`已新增 ${name}`);
+    load();
+  } catch (e) {
+    $('#err').textContent = '新增失败：' + e.message;
+  }
+});
 
 const headerStr = () => current.map(c => `${c.name}=${c.value}`).join('; ');
 const jsonStr = () => JSON.stringify(Object.fromEntries(current.map(c => [c.name, c.value])), null, 2);
@@ -75,10 +139,7 @@ $('#delAll').addEventListener('click', async () => {
   if (!confirm(`确定清空 ${$('#host').textContent} 的 ${current.length} 条 Cookie？可能需要重新登录。`)) return;
   for (const c of current) {
     try {
-      await chrome.cookies.remove({
-        url: `http${c.secure ? 's' : ''}://${c.domain.startsWith('.') ? c.domain.slice(1) : c.domain}${c.path || '/'}`,
-        name: c.name,
-      });
+      await chrome.cookies.remove({ url: cookieUrl(c), name: c.name });
     } catch { /* 忽略单条失败 */ }
   }
   ok('已清空');

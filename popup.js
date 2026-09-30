@@ -53,6 +53,26 @@ $('#showPw').addEventListener('click', async () => {
   } catch (e) { msg('失败：' + e.message); }
 });
 
+$('#unlock').addEventListener('click', async () => {
+  try {
+    const result = await injectIntoActiveTab(() => {
+      if (document.getElementById('asu-unlock-style')) return 'already';
+      const style = document.createElement('style');
+      style.id = 'asu-unlock-style';
+      style.textContent = '*,p,span,div,td,li{user-select:text!important;-webkit-user-select:text!important}';
+      (document.head || document.documentElement).appendChild(style);
+      const stop = e => e.stopPropagation();
+      ['contextmenu', 'selectstart', 'copy', 'cut', 'dragstart', 'mousedown', 'keydown'].forEach(t =>
+        document.addEventListener(t, stop, true));
+      document.querySelectorAll('*').forEach(el => {
+        ['oncontextmenu', 'onselectstart', 'oncopy', 'oncut', 'ondragstart'].forEach(p => { try { el[p] = null; } catch {} });
+      });
+      return 'unlocked';
+    });
+    msg(result === 'already' ? '本页已解除过限制' : result ? '已解除复制/右键限制' : '无法注入本页');
+  } catch (e) { msg('失败：' + e.message); }
+});
+
 $('#qrPage').addEventListener('click', async () => {
   const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
   chrome.tabs.create({ url: 'tools/qr.html?text=' + encodeURIComponent(tab?.url || '') });

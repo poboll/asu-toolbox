@@ -4,7 +4,7 @@
 
 **一个扩展，一揽子服务**
 
-[![Version](https://img.shields.io/badge/version-2.0.0-f58220.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.1.0-f58220.svg)](CHANGELOG.md)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285f4.svg)](https://developer.chrome.com/docs/docs/extensions/develop/migrate)
 [![License: MIT](https://img.shields.io/badge/License-MIT-18a058.svg)](LICENSE)
 [![Chrome](https://img.shields.io/badge/Chrome%2FArc%2FEdge-%E2%89%A5111-000000.svg)](https://developer.chrome.com/docs/extensions)
@@ -44,6 +44,9 @@
 | 🌐 搜索 | 网盘聚合搜索 | 选中资源名右键，直达网盘搜索引擎（模板可自定义） |
 | 🧩 扩展性 | 执行自定义脚本 | 在设置里写 JS，保存后作为右键菜单项在页面上下文执行 |
 | 🛡 代理 | 代理管理器 | 固定服务器 / PAC 订阅 URL / 域名分流规则三种模式，弹窗一键开关，可查出口 IP |
+| 🧹 净化 | 搜索结果净化 | 百度/搜狗去广告、跟踪跳转链接还原为真实地址 |
+| 🌍 翻译 | 翻译选中文本 | 谷歌 / 百度 / DeepL / 必应 四引擎划词深链 |
+| 🔓 解锁 | 解除复制限制 | 一键恢复被禁用的右键、复制与文字选择 |
 
 工具栏弹窗还提供：代理总开关、显示本页密码、页面二维码、二维码工具页、Cookie 工具页的快捷入口。
 
@@ -154,6 +157,10 @@ git clone https://github.com/poboll/asu-toolbox.git
 ## 🗺 路线图
 
 - [x] v2.0.0 全面重构：品牌更名、Service Worker 模块化、消息总线规范化
+- [x] v2.1.0 搜索结果净化（百度/搜狗去广告+直链还原）
+- [x] v2.1.0 网页限制解除（右键/弹窗一键）
+- [x] v2.1.0 划词翻译深链（谷歌/百度/DeepL/必应）
+- [x] v2.1.0 Cookie 按条管理（行内编辑/删除/新增）
 - [ ] 百度/搜狗搜索结果净化（去广告、直链还原）
 - [ ] 网页限制解除（复制/右键/选择）
 - [ ] 划词翻译深链（聚合多家引擎）
@@ -180,4 +187,4 @@ git clone https://github.com/poboll/asu-toolbox.git
 
 ## 📄 许可证
 
-[MIT](LICENSE) © 2026 阿苏（xiaoshenming）。`vendor/` 目录内第三方组件依其原始许可证授权。
+[MIT](LICENSE) © 2026 阿苏（poboll）。`vendor/` 目录内第三方组件依其原始许可证授权。

@@ -43,4 +43,3 @@
 - 隐私承诺：无统计、无埋点、无远程脚本
 
 [2.0.0]: https://github.com/poboll/asu-toolbox/releases/tag/v2.0.0
-[1.0.0]: https://github.com/poboll/asu-toolbox/releases/tag/v1.0.0

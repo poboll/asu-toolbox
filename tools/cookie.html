@@ -15,6 +15,8 @@
   button { background:var(--orange); border:none; color:#fff; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:13px; }
   button.ghost { background:#eee; color:#333; }
   button.danger { background:#e5484d; }
+  button.mini { padding:2px 8px; font-size:11px; border-radius:6px; }
+  td.v { cursor:pointer; }
   table { width:100%; border-collapse:collapse; font-size:12px; }
   th,td { text-align:left; padding:5px 8px; border-bottom:1px solid #f0f0f0; word-break:break-all; }
   th { color:#888; font-weight:500; background:#fafafa; }
@@ -31,6 +33,7 @@
     <div>当前站点：<span class="host" id="host">（请先打开一个网页再进本页）</span></div>
     <div class="row">
       <button id="reload" class="ghost">刷新</button>
+      <button id="add">➕ 新增 Cookie</button>
       <button id="copyHeader">复制为请求头</button>
       <button id="copyNetscape">导出 Netscape（wget/curl/aria2 可用）</button>
       <button id="copyJson">复制 JSON</button>
@@ -39,7 +42,7 @@
     <div class="tip" id="err"></div>
   </div>
   <div class="card">
-    <table><thead><tr><th>名称</th><th>值</th><th>域</th><th>过期</th></tr></thead>
+    <table><thead><tr><th>名称</th><th>值（点击编辑）</th><th>域</th><th>过期</th><th>操作</th></tr></thead>
     <tbody id="rows"></tbody></table>
   </div>
   <div class="card">

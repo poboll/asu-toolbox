@@ -73,6 +73,15 @@
 
   <div id="s-search" class="hidden">
     <div class="card">
+      <h2>搜索结果净化</h2>
+      <div class="desc">在百度/搜狗搜索页自动隐藏广告位，并把跟踪跳转链接还原为真实地址（脚本 <code>content/cleaner.js</code>）。</div>
+      <div class="menu-grid">
+        <div class="toggle-row"><span>百度搜索净化</span><label class="sw"><input type="checkbox" id="cleanerBaidu" checked><i></i></label></div>
+        <div class="toggle-row"><span>搜狗搜索净化</span><label class="sw"><input type="checkbox" id="cleanerSogou" checked><i></i></label></div>
+        <div class="toggle-row"><span>重定向链接还原</span><label class="sw"><input type="checkbox" id="cleanerDeredirect" checked><i></i></label></div>
+      </div>
+    </div>
+    <div class="card">
       <h2>网盘聚合搜索</h2>
       <div class="desc">选中文字后右键搜索网盘资源。URL 模板里用 <b>{q}</b> 表示关键词。原大力盘若失效可换成任何网盘搜索引擎。</div>
       <label class="f">搜索 URL 模板</label><input type="url" id="panTemplate">

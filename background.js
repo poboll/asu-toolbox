@@ -28,6 +28,12 @@ const MENU_DEFS = [
   { id: 'download',      contexts: ['link', 'audio', 'video'],       type: 'download', title: '使用浏览器下载' },
   { id: 'aria-down',     contexts: ['link', 'audio', 'video'],       type: 'aria',     title: '推送到 Aria2 下载' },
   { id: 'motrix-down',   contexts: ['link', 'audio', 'video'],       type: 'motrix',   title: '推送到 Motrix 下载' },
+  { id: 'translate-selection', contexts: ['selection'], type: 'translate_parent', title: '翻译选中文本' },
+  { id: 'translate-google', parentId: 'translate-selection', contexts: ['selection'], type: 'translate', title: '谷歌翻译', engine: 'google' },
+  { id: 'translate-baidu', parentId: 'translate-selection', contexts: ['selection'], type: 'translate', title: '百度翻译', engine: 'baidu' },
+  { id: 'translate-deepl', parentId: 'translate-selection', contexts: ['selection'], type: 'translate', title: 'DeepL 翻译', engine: 'deepl' },
+  { id: 'translate-bing', parentId: 'translate-selection', contexts: ['selection'], type: 'translate', title: '必应翻译', engine: 'bing' },
+  { id: 'unlock-copy',   contexts: ['page'],                         type: 'unlock',   title: '解除本页复制/右键限制' },
   { id: 'show-password', contexts: ['page'],                         type: 'password', title: '显示/隐藏明文密码' },
   { id: 'cookie-tool',   contexts: ['page'],                         type: 'cookie',   title: 'Cookie 工具（本站）' },
   { id: 'open-options',  contexts: ['page'],                         type: 'options',  title: '阿苏工具箱设置' },
@@ -38,6 +44,7 @@ const DEFAULT_CONFIG = {
   aria:   { server: 'http://localhost:6800/jsonrpc',  token: '' },
   motrix: { server: 'http://localhost:16800/jsonrpc', token: '' },
   pan:    { template: 'https://www.dalipan.com/search?key={q}' },
+  cleaner: { baidu: true, sogou: true, deredirect: true },
   proxy: {
     mode: 'off', // off | fixed | pac_url | rules
     fixed: { scheme: 'http', host: '127.0.0.1', port: 7890 },
@@ -78,7 +85,13 @@ async function rebuildMenus() {
   for (const def of MENU_DEFS) {
     const state = cfg.menus[def.id] || { on: true, title: def.title };
     if (!state.on) continue;
-    await createMenu({ id: def.id, contexts: def.contexts, title: state.title || def.title });
+    if (def.parentId && cfg.menus[def.parentId]?.on === false) continue; // 父项关闭则隐藏子项
+    await createMenu({
+      id: def.id,
+      parentId: def.parentId,
+      contexts: def.contexts,
+      title: state.title || def.title,
+    });
   }
   for (const script of cfg.scripts || []) {
     if (!script.on || !script.name) continue;
@@ -286,6 +299,41 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       case 'open-options':
         chrome.runtime.openOptionsPage();
         break;
+      case 'unlock-copy': {
+        const [r] = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: () => {
+            if (document.getElementById('asu-unlock-style')) return 'already';
+            const style = document.createElement('style');
+            style.id = 'asu-unlock-style';
+            style.textContent = '*,p,span,div,td,li{user-select:text!important;-webkit-user-select:text!important}';
+            (document.head || document.documentElement).appendChild(style);
+            const stop = e => e.stopPropagation();
+            ['contextmenu', 'selectstart', 'copy', 'cut', 'dragstart', 'mousedown', 'keydown'].forEach(t =>
+              document.addEventListener(t, stop, true));
+            document.querySelectorAll('*').forEach(el => {
+              ['oncontextmenu', 'onselectstart', 'oncopy', 'oncut', 'ondragstart'].forEach(p => { try { el[p] = null; } catch {} });
+            });
+            return 'unlocked';
+          },
+        });
+        notify(BRAND, r?.result === 'already' ? '本页已解除过限制' : '已解除本页复制/右键限制（刷新后恢复）');
+        break;
+      }
+      case 'translate': {
+        const def = MENU_DEFS.find(d => d.id === menuId) || {};
+        const q = (info.selectionText || '').trim();
+        if (!q) { notify(BRAND, '请先选中要翻译的文字'); break; }
+        const eq = encodeURIComponent(q);
+        const urls = {
+          google: `https://translate.google.com/?sl=auto&op=translate&text=${eq}`,
+          baidu:  `https://fanyi.baidu.com/#auto/zh/${eq}`,
+          deepl:  `https://www.deepl.com/translator#auto/zh/${eq}`,
+          bing:   `https://www.bing.com/translator/?text=${eq}`,
+        };
+        chrome.tabs.create({ url: urls[def.engine] || urls.google });
+        break;
+      }
       default:
         if (menuId.startsWith('script-')) {
           const script = (cfg.scripts || []).find(s => menuId === 'script-' + s.id);
